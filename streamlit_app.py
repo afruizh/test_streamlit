@@ -353,12 +353,12 @@ if not DATABRICKS_HOST or not DATABRICKS_TOKEN:
 
 try:
     ENDPOINT_SUPPORTS_FEEDBACK = endpoint_supports_feedback(SERVING_ENDPOINT)
-    st.success("✅ Successfully connected to Databricks endpoint!")
+    #st.success("✅ Successfully connected to Databricks endpoint!")
 except Exception as e:
     logger.warning(f"Could not check endpoint feedback support: {e}")
     ENDPOINT_SUPPORTS_FEEDBACK = False
-    st.error(f"❌ Could not connect to Databricks: {str(e)}")
-    st.info("Please check your Databricks credentials and endpoint configuration.")
+    st.error(f"❌ Could not connect to endpoint: {str(e)}")
+    st.info("Please check your credentials and endpoint configuration.")
 
 
 
