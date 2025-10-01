@@ -190,6 +190,66 @@ from messages import UserMessage, AssistantResponse, render_message
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# --- DEBUG SECTION: Show config and secrets status in the UI ---
+# (Moved here so variables are defined)
+
+# Try to get configuration from environment variables first, then Streamlit secrets
+SERVING_ENDPOINT = os.getenv('SERVING_ENDPOINT')
+DATABRICKS_HOST = os.getenv('DATABRICKS_HOST')
+DATABRICKS_TOKEN = os.getenv('DATABRICKS_TOKEN')
+
+# If not found in environment, try Streamlit secrets
+if not SERVING_ENDPOINT or not DATABRICKS_HOST or not DATABRICKS_TOKEN:
+    try:
+        # Debug: Show what we're trying to read
+        logger.info("Trying to read from Streamlit secrets...")
+        
+        if hasattr(st, 'secrets'):
+            logger.info("Streamlit secrets are available")
+            if not SERVING_ENDPOINT:
+                try:
+                    SERVING_ENDPOINT = st.secrets["SERVING_ENDPOINT"]
+                    logger.info(f"Got SERVING_ENDPOINT from secrets: {'***' if SERVING_ENDPOINT else 'None'}")
+                except KeyError:
+                    logger.warning("SERVING_ENDPOINT not found in secrets")
+            if not DATABRICKS_HOST:
+                try:
+                    DATABRICKS_HOST = st.secrets["DATABRICKS_HOST"]
+                    logger.info(f"Got DATABRICKS_HOST from secrets: {'***' if DATABRICKS_HOST else 'None'}")
+                except KeyError:
+                    logger.warning("DATABRICKS_HOST not found in secrets")
+            if not DATABRICKS_TOKEN:
+                try:
+                    DATABRICKS_TOKEN = st.secrets["DATABRICKS_TOKEN"]
+                    logger.info(f"Got DATABRICKS_TOKEN from secrets: {'***' if DATABRICKS_TOKEN else 'None'}")
+                except KeyError:
+                    logger.warning("DATABRICKS_TOKEN not found in secrets")
+            # Debug: Show available secrets
+            try:
+                available_secrets = list(st.secrets.keys())
+                logger.info(f"Available secrets: {available_secrets}")
+            except Exception as e:
+                logger.warning(f"Could not list secrets: {e}")
+        else:
+            logger.warning("Streamlit secrets not available")
+            
+        # Set environment variables for databricks-sdk
+        if DATABRICKS_HOST:
+            os.environ['DATABRICKS_HOST'] = DATABRICKS_HOST
+        if DATABRICKS_TOKEN:
+            os.environ['DATABRICKS_TOKEN'] = DATABRICKS_TOKEN
+            
+    except Exception as e:
+        logger.error(f"Error reading from Streamlit secrets: {e}")
+        st.error(f"Error reading secrets: {e}")
+
+
+# Try to get configuration from environment variables first, then Streamlit secrets
+SERVING_ENDPOINT = os.getenv('SERVING_ENDPOINT')
+DATABRICKS_HOST = os.getenv('DATABRICKS_HOST')
+DATABRICKS_TOKEN = os.getenv('DATABRICKS_TOKEN')
+
+
 
 def reduce_chat_agent_chunks(chunks):
     """
