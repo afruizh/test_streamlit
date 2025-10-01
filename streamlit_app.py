@@ -243,11 +243,123 @@ if not SERVING_ENDPOINT or not DATABRICKS_HOST or not DATABRICKS_TOKEN:
         logger.error(f"Error reading from Streamlit secrets: {e}")
         st.error(f"Error reading secrets: {e}")
 
-
+# # --- DEBUG SECTION: Show config and secrets status in the UI ---
+# with st.expander('🛠️ Debug: Configuration & Secrets', expanded=True):
+#     st.write('**App config values:**')
+#     st.write(f"SERVING_ENDPOINT: {'✅' if SERVING_ENDPOINT else '❌'} {SERVING_ENDPOINT if SERVING_ENDPOINT else ''}")
+#     st.write(f"DATABRICKS_HOST: {'✅' if DATABRICKS_HOST else '❌'} {DATABRICKS_HOST if DATABRICKS_HOST else ''}")
+#     st.write(f"DATABRICKS_TOKEN: {'✅' if DATABRICKS_TOKEN else '❌'} {'set' if DATABRICKS_TOKEN else ''}")
+#     st.write('**Environment variables:**')
+#     st.write(f"os.environ['SERVING_ENDPOINT']: {os.environ.get('SERVING_ENDPOINT')}")
+#     st.write(f"os.environ['DATABRICKS_HOST']: {os.environ.get('DATABRICKS_HOST')}")
+#     st.write(f"os.environ['DATABRICKS_TOKEN']: {'set' if os.environ.get('DATABRICKS_TOKEN') else ''}")
+#     st.write('**st.secrets keys:**')
+#     try:
+#         st.write(list(st.secrets.keys()))
+#     except Exception as e:
+#         st.write(f"Could not access st.secrets: {e}")
 # Try to get configuration from environment variables first, then Streamlit secrets
 SERVING_ENDPOINT = os.getenv('SERVING_ENDPOINT')
 DATABRICKS_HOST = os.getenv('DATABRICKS_HOST')
 DATABRICKS_TOKEN = os.getenv('DATABRICKS_TOKEN')
+
+# If not found in environment, try Streamlit secrets
+if not SERVING_ENDPOINT or not DATABRICKS_HOST or not DATABRICKS_TOKEN:
+    try:
+        # Debug: Show what we're trying to read
+        logger.info("Trying to read from Streamlit secrets...")
+        
+        if hasattr(st, 'secrets'):
+            logger.info("Streamlit secrets are available")
+            if not SERVING_ENDPOINT:
+                try:
+                    SERVING_ENDPOINT = st.secrets["SERVING_ENDPOINT"]
+                    logger.info(f"Got SERVING_ENDPOINT from secrets: {'***' if SERVING_ENDPOINT else 'None'}")
+                except KeyError:
+                    logger.warning("SERVING_ENDPOINT not found in secrets")
+            if not DATABRICKS_HOST:
+                try:
+                    DATABRICKS_HOST = st.secrets["DATABRICKS_HOST"]
+                    logger.info(f"Got DATABRICKS_HOST from secrets: {'***' if DATABRICKS_HOST else 'None'}")
+                except KeyError:
+                    logger.warning("DATABRICKS_HOST not found in secrets")
+            if not DATABRICKS_TOKEN:
+                try:
+                    DATABRICKS_TOKEN = st.secrets["DATABRICKS_TOKEN"]
+                    logger.info(f"Got DATABRICKS_TOKEN from secrets: {'***' if DATABRICKS_TOKEN else 'None'}")
+                except KeyError:
+                    logger.warning("DATABRICKS_TOKEN not found in secrets")
+            # Debug: Show available secrets
+            try:
+                available_secrets = list(st.secrets.keys())
+                logger.info(f"Available secrets: {available_secrets}")
+            except Exception as e:
+                logger.warning(f"Could not list secrets: {e}")
+        else:
+            logger.warning("Streamlit secrets not available")
+            
+        # Set environment variables for databricks-sdk
+        if DATABRICKS_HOST:
+            os.environ['DATABRICKS_HOST'] = DATABRICKS_HOST
+        if DATABRICKS_TOKEN:
+            os.environ['DATABRICKS_TOKEN'] = DATABRICKS_TOKEN
+            
+    except Exception as e:
+        logger.error(f"Error reading from Streamlit secrets: {e}")
+        st.error(f"Error reading secrets: {e}")
+
+# Check if we have the required configuration
+if not SERVING_ENDPOINT:
+    st.error("❌ **Missing Configuration: SERVING_ENDPOINT**")
+    st.info("""
+    **For Streamlit Cloud deployment**, add this to your app secrets:
+    ```
+    SERVING_ENDPOINT = "your-databricks-endpoint-name"
+    DATABRICKS_HOST = "https://your-workspace.cloud.databricks.com"
+    DATABRICKS_TOKEN = "your-databricks-token"
+    ```
+    
+    **For local development**, set environment variables or create `.streamlit/secrets.toml`:
+    ```toml
+    SERVING_ENDPOINT = "your-databricks-endpoint-name"
+    DATABRICKS_HOST = "https://your-workspace.cloud.databricks.com"
+    DATABRICKS_TOKEN = "your-databricks-token"
+    ```
+    """)
+    st.stop()
+
+if not DATABRICKS_HOST or not DATABRICKS_TOKEN:
+    st.error("❌ **Missing Databricks Authentication**")
+    st.info("""
+    **Required secrets:**
+    - `DATABRICKS_HOST`: Your Databricks workspace URL
+    - `DATABRICKS_TOKEN`: Your Databricks personal access token
+    
+    Add these to your Streamlit Cloud app secrets or local `.streamlit/secrets.toml` file.
+    """)
+    st.stop()
+
+# # Debug info (remove in production)
+# with st.expander("🔧 Configuration Debug", expanded=False):
+#     st.write("**Configuration Status:**")
+#     st.write(f"- SERVING_ENDPOINT: {'✅ Set' if SERVING_ENDPOINT else '❌ Missing'}")
+#     st.write(f"- DATABRICKS_HOST: {'✅ Set' if DATABRICKS_HOST else '❌ Missing'}")
+#     st.write(f"- DATABRICKS_TOKEN: {'✅ Set' if DATABRICKS_TOKEN else '❌ Missing'}")
+    
+#     if SERVING_ENDPOINT:
+#         st.write(f"- Endpoint name: `{SERVING_ENDPOINT}`")
+#     if DATABRICKS_HOST:
+#         st.write(f"- Databricks host: `{DATABRICKS_HOST}`")
+
+try:
+    ENDPOINT_SUPPORTS_FEEDBACK = endpoint_supports_feedback(SERVING_ENDPOINT)
+    st.success("✅ Successfully connected to Databricks endpoint!")
+except Exception as e:
+    logger.warning(f"Could not check endpoint feedback support: {e}")
+    ENDPOINT_SUPPORTS_FEEDBACK = False
+    st.error(f"❌ Could not connect to Databricks: {str(e)}")
+    st.info("Please check your Databricks credentials and endpoint configuration.")
+
 
 
 
