@@ -176,16 +176,16 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# import logging
-# import os
-# from model_serving_utils import (
-#     endpoint_supports_feedback, 
-#     query_endpoint, 
-#     query_endpoint_stream, 
-#     _get_endpoint_task_type,
-# )
-# from collections import OrderedDict
-# from messages import UserMessage, AssistantResponse, render_message
+import logging
+import os
+from model_serving_utils import (
+    endpoint_supports_feedback, 
+    query_endpoint, 
+    query_endpoint_stream, 
+    _get_endpoint_task_type,
+)
+from collections import OrderedDict
+from messages import UserMessage, AssistantResponse, render_message
 
 # logging.basicConfig(level=logging.INFO)
 # logger = logging.getLogger(__name__)
